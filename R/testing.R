@@ -143,24 +143,32 @@ chi2indeptest <- function(x, alpha) {
 # x <- rnorm(100); x <- x-min(x); x <- x/max(x)
 # tbl <- chi2testtable(x, 0.01)
 chi2testtable <- function(x, alpha, cf = FALSE) {
-   # number of bins based on rule of thumb [Cochran, Ann. of Math. Stat., 23(3),
-   # section 7] and expression in [Mann & Wald, Ann. of Math. Stat., 13(3)], ...
-   xu <- unique(x) # get rid of duplicates
-   nu <- length(xu) # number of unique samples
-   c <- stats::qnorm(alpha, lower = FALSE)
-   ks <- nu/5
-   kp <- 4*(2*(nu-1)^2/c^2)^(1/5)
-   # ... for contingency tables see [Bagnato, Punzo, & Nicolis, J. Time Ser. Anal., 33]
-   if (cf) {ks <- sqrt(ks); kp <- sqrt(kp)}
-   k <- max(1, floor(min(ks,kp))) # number of bins
-   # put data into bins
-   xu <- sort(xu)
-   be <- c(rep(0, k),1) # bin edges
-   for (j in 1:k) { # loop over bins
-      ns <- floor(j/k*nu+0.5) # index of last sample in current bin
-      # floor is used instead of round because round(0.5) -> 0 not 1 (!= matlab)
-      if (j < k) {be[j+1] <- (xu[ns+1] + xu[ns])/2} # all but last bins
+   # first try without eliminating duplicates (unique is an expensive operation)
+   xu <- x
+   for (t in 1:2) {
+      # number of bins based on rule of thumb [Cochran, Ann. of Math. Stat., 23(3),
+      # section 7] and expression in [Mann & Wald, Ann. of Math. Stat., 13(3)], ...
+      n <- length(xu) # number of (unique) samples
+      c <- stats::qnorm(alpha, lower = FALSE)
+      ks <- n/5
+      kp <- 4*(2*(n-1)^2/c^2)^(1/5)
+      # ... for contingency tables see [Bagnato, Punzo, & Nicolis, J. Time Ser. Anal., 33]
+      if (cf) {ks <- sqrt(ks); kp <- sqrt(kp)}
+      k <- max(1, floor(min(ks,kp))) # number of bins
+      # put data into bins
+      xu <- sort(xu)
+      be <- c(rep(0, k),1) # bin edges
+      for (j in 1:k) { # loop over bins
+         ns <- floor(j/k*n+0.5) # index of last sample in current bin
+         # floor is used instead of round because round(0.5) -> 0 not 1 (!= matlab)
+         if (j < k) {be[j+1] <- (xu[ns+1] + xu[ns])/2} # all but last bins
+      }
+      # check if there are no zero bins
+      if (all(be[2:length(be)] != be[1:(length(be)-1)])) {break}
+      # second attempt, now without duplicates
+      xu <- unique(x)
    }
+   rm(xu) # free memory
    co <- cut(x, breaks = be, include.lowest = TRUE) # convert data to factor
    co <- table(co) # table with counts of factor levels
    return(list(co = co, be = be))

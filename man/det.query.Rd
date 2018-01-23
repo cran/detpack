@@ -30,13 +30,15 @@ x <- matrix(seq(-10,14,0.01), nrow = 1); p <- det.query(det, x, cores = 1)
 plot(x, p, type = "l", col = "black")
 lines(x, dnorm(x,2,3), col = "red")
 
+grDevices::dev.off() # erase plot
+
 ## 2d example
 require(stats); require(graphics)
 # mean and covariance of Gaussian, data generation
 mu <- c(3,5); C <- matrix(c(4.0,-2.28,-2.28,1.44), nrow = 2)
 A <- eigen(C); B <- diag(A$values); A <- A$vectors
 x <- matrix(rnorm(2e4), nrow = 2)
-x <- t(A \%*\% (sqrt(B) \%*\% x) + mu \%*\% t(rep(1,dim(x)[2])))
+x <- t(A \%*\% (sqrt(B) \%*\% x) + mu \%*\% t(rep(1,ncol(x))))
 # bounds and resolution of x1-x2 query grid
 lb <- c(-5,0); ub <- c(11,10); np <- c(320,200)
 x1 <- lb[1] + (ub[1]-lb[1])*((1:np[1])-0.5)/np[1]
@@ -53,8 +55,8 @@ image(list(x = x1, y = x2, z = yd), asp = 1,
       col = grDevices::gray((100:0)/100), main = "det")
 # Gaussian density for comparison
 yr <- yr <- exp(-1/2 * colSums(
-   (t(solve(C)) \%*\% (xp - mu\%*\%t(rep(1,dim(xp)[2])))) *
-                    (xp - mu\%*\%t(rep(1,dim(xp)[2]))))
+   (t(solve(C)) \%*\% (xp - mu\%*\%t(rep(1,ncol(xp))))) *
+                    (xp - mu\%*\%t(rep(1,ncol(xp)))))
                               ) / sqrt((2*pi)^2*det(C))
 yr <- matrix(yr, nrow = np[1])
 screen(3)

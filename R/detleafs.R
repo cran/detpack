@@ -26,7 +26,7 @@
 #' }
 det.leafs <- function(det) {
    d <- length(det$lb) # number of dimensions
-   indl <- seq(dim(det$tree)[1])[is.na(det$tree[,2])] # indices of leafs in tree
+   indl <- seq(nrow(det$tree))[is.na(det$tree[,2])] # indices of leafs in tree
    m <- length(indl) # number of leaf elements
    # initialize leaf property fields
    p <- rep(NA,m) # de probability density

@@ -15,7 +15,7 @@
 #' ## 2d example
 #' require(stats); require(graphics)
 #' # data from uniform distribution on a wedge
-#' x <- matrix(runif(16e3), ncol = 2); x <- x[x[,2]<x[,1],]
+#' x <- matrix(runif(2e4), ncol = 2); x <- x[x[,2]<x[,1],]
 #' x2c <- 0.75 # conditioning component
 #' # data and conditioning line
 #' split.screen(c(2, 1)); screen(1)
@@ -28,28 +28,32 @@
 #' screen(2); det1(y[1,], mode = 1, cores = 2)
 #' lines(c(0,x2c,x2c,1,1),c(0,0,1/(1-x2c),1/(1-x2c),0), col = "red")
 #'
+#' grDevices::dev.off() # erase plot
+#'
 #' ## example 2d unconditional
 #' require(stats); require(graphics)
-#' x <- matrix(runif(16e3), ncol = 2); x <- x[x[,2]<x[,1],] # uniform wedge
-#' det <- det.construct(t(x), mode = 1, ub = 0, lb = 0, cores = 1) # const. de's, no pre-white
-#' y <- t(det.rnd(5e3, det, cores = 1)) # smooth bootstrapping
+#' x <- matrix(runif(1e4), ncol = 2); x <- x[x[,2]<x[,1],] # uniform wedge
+#' det <- det.construct(t(x), mode = 1, lb = 0, ub = 0, cores = 1) # no pre-white
+#' y <- t(det.rnd(nrow(x), det, cores = 1)) # smooth bootstrapping
 #' split.screen(c(2, 1))
 #' screen(1); plot(x, type = "p", pch = ".", asp = 1, main = "original")
 #' screen(2); plot(y, type = "p", pch = ".", asp = 1, main = "bootstrapped")
+#'
+#' grDevices::dev.off() # erase plot
 #'
 #' ## example 3d
 #' require(stats); require(graphics)
 #' # mean and covariance of Gaussian, data generation
 #' mu <- c(1,3,2); C <- matrix(c(25,7.5,1.75,7.5,7,1.35,1.75,1.35,0.43), nrow = 3)
 #' A <- eigen(C); B <- diag(A$values); A <- A$vectors
-#' x <- matrix(rnorm(3e4), nrow = 3)
-#' x <- A %*% (sqrt(B) %*% x) + mu %*% t(rep(1,dim(x)[2]))
+#' x <- matrix(rnorm(24e3), nrow = 3)
+#' x <- A %*% (sqrt(B) %*% x) + mu %*% t(rep(1,ncol(x)))
 #' lbl <- "x1 | x2 = 7 & x3 = 2.5"
 #' pairs(t(x), labels = c("x1","x2","x3"), pch = ".", main = lbl)
 #' # bootstrapping conditional on x2 and x3
 #' det <- det.construct(x, lb = 0, ub = 0, cores = 2)
 #' xc <- c(2.5,7); d <- c(3,2) # conditional on x2 = 7 & x3 = 2.5
-#' y <- det.rnd(2e3, det, xc, d, cores = 2)
+#' y <- det.rnd(1e3, det, xc, d, cores = 2)
 #' det1(y[1,], mode = 1, main = lbl, cores = 2)
 #' # compare with exact conditional density
 #' Cm1 <- solve(C); var1 <- det(C)/det(C[2:3,2:3]) # conditional variance
@@ -60,7 +64,7 @@ det.rnd <- function(n, det, xc = vector("numeric", length = 0), dc = vector("num
    ds <- length(det$lb) # number of sample-space dimensions
    # collect det leafs cut by condit'g planes p
    if (length(xc) == 0) { # unconditional case
-      leafs <- seq(dim(det$tree)[1])[is.na(det$tree[,2])] # list with indices of leaf elements
+      leafs <- seq(nrow(det$tree))[is.na(det$tree[,2])] # list with indices of leaf elements
    } else { # conditional case
       # check input
       if (!(all(det$A == diag(ds)) & all(det$mu == 0))) {
@@ -132,7 +136,7 @@ det.rnd <- function(n, det, xc = vector("numeric", length = 0), dc = vector("num
 
 #' Identify Tree Leafs Intersected by Condition(s)
 #'
-#' Identify distribution element tree (DET) leafs that are cut by conditions. The latter are defined in terms of positions \code{xc} along probability-space components with indices \code{d}.
+#' Identify distribution element tree (DET) leafs that are cut by conditions. The latter are defined in terms of positions \code{xc} along probability-space components with indices \code{dc}.
 #'
 #' @param det distribution element tree object resulting from \code{\link{det.construct}}.
 #' @param xc vector with conditioning values of probability-space components listed in \code{dc}.
@@ -166,11 +170,11 @@ det.cut <- function(det, xc, dc) {
    # no leafs are cut with condit'g planes outside of sample space
    if (any((xc < 0) | (1 < xc))) {return(leafs)}
    # initialize list of interim elements for search of cut final elements
-   ind <- rep(NA,dim(det$tree)[1]); n <- 0 # list and counter of interim elements
-   pr <- matrix(rep(NA,length(xc)*dim(det$tree)[1]), nrow = length(xc)) # relative condit'g plane positions
+   ind <- rep(NA,nrow(det$tree)); n <- 0 # list and counter of interim elements
+   pr <- matrix(rep(NA,length(xc)*nrow(det$tree)), nrow = length(xc)) # relative condit'g plane positions
    ind[1] <- 1; n <- 1; pr[,1] <- xc # start from root de
    # search det level-by-level for leafs that are cut by condit'g planes
-   leafs <- rep(NA,dim(det$tree)[1])
+   leafs <- rep(NA,nrow(det$tree))
    while (n > 0) { # loop until all interim elements were searched
       nc <- n # current number of interim elements to be checked
       k <- 1 # counter for ind list

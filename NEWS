@@ -1,3 +1,8 @@
+2018-01-22: Daniel Meyer <meyerda@ethz.ch>
+    * Version: 1.0.1
+    * DESCRIPTION, detpack.R, detrnd.R, det2.R: Updating docu and examples
+    * detconstruct.R, testing.R: Performance enhancements
+
 2018-01-17: Daniel Meyer <meyerda@ethz.ch>
     * Version: 1.0.0
     * DESCRIPTION, detconstruct.R, detpack.R: Completion of literature references
@@ -5,4 +10,4 @@
 2018-01-16: Daniel Meyer <meyerda@ethz.ch>
     * NEWS: Added file for tracking changes
     * DESCRIPTION: Minor rewording of text
-    * detconstruct.R, det1.R, det2.R: Significance level parameters as function arguments
+    * detconstruct.R, det1.R, det2.R: Significance levels as function arguments

@@ -28,11 +28,13 @@ Two-dimensional piecewise linear or constant probability density estimator based
 \examples{
 ## uniform
 require(stats)
-det2(rbind(runif(1e4),1+2*runif(1e4)), mode = 1, bounds = list(c(-0.1,0),c(1.1,4)), cores = 1)
+det2(rbind(runif(5e3),1+2*runif(5e3)), mode = 1, bounds = list(c(-0.1,0),c(1.1,4)), cores = 1)
 det2(rbind(1:100,101:200), mode = 2, np = c(160,160), cores = 1) # data on a line
 
+grDevices::dev.off() # erase plot
+
 ## Gaussian
-require(stats); require(graphics)
+require(stats); require(graphics); require(grDevices)
 n <- 1e3; x <- rnorm(n)
 x <- matrix(c(x, x+rnorm(n,0,0.5)), ncol = 2)
 split.screen(c(2,2))

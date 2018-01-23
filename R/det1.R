@@ -30,7 +30,7 @@ det1 <- function(x, mode = 2, bounds = c(0,0), alpha = 1.0e-3, main = NULL, core
    # plot det
    d <- matrix(NA, nrow = length(leafs$p), ncol = 2) # pdf estimate
    x <- d # x-axis
-   for (k in 1:dim(d)[1]) { # loop over distribution elements or tree leafs
+   for (k in 1:nrow(d)) { # loop over distribution elements or tree leafs
       x[k,] <- c(leafs$lb[k], leafs$lb[k]+leafs$size[k]) # element bounds
       # element distribution
       if (leafs$p[k] == 0) {d[k,] <- 0} else { # theta undefined for empty elements

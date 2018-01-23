@@ -17,7 +17,7 @@ det.cut(det, xc, dc)
 A vector containing the leaf indices that are cut by conditions \code{xc} of components \code{dc} is returned. If no leafs are found, the return vector has length 0.
 }
 \description{
-Identify distribution element tree (DET) leafs that are cut by conditions. The latter are defined in terms of positions \code{xc} along probability-space components with indices \code{d}.
+Identify distribution element tree (DET) leafs that are cut by conditions. The latter are defined in terms of positions \code{xc} along probability-space components with indices \code{dc}.
 }
 \examples{
 # DET based on Gaussian data

@@ -5,8 +5,8 @@
 #' In the latter mode, information about certain probability-space components is taken into account when sampling the remaining probability-space components.
 #'
 #' The function \code{\link{det.construct}} translates a dataset into a DET.
-#' To evaluate the probabilty density based on a precomputed DET at arbitrary query points, \code{\link{det.query}} is used.
-#' The specific functions \code{\link{det1}} and \code{\link{det2}} provide density evaluation and plotting for one- and two-dimensional cases.
+#' To evaluate the probability density based on a precomputed DET at arbitrary query points, \code{\link{det.query}} is used.
+#' The functions \code{\link{det1}} and \code{\link{det2}} provide density estimation and plotting for one- and two-dimensional datasets.
 #' (Un)conditional smooth bootstrapping from an available DET, can be performed by \code{\link{det.rnd}}.
 #' To inspect the structure of a DET, the functions \code{\link{det.de}} and \code{\link{det.leafs}} are useful. While \code{\link{det.de}} enables the extraction of an individual distribution element from the tree, \code{\link{det.leafs}} extracts all leaf elements at branch ends.
 #'

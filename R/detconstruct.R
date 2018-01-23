@@ -32,17 +32,18 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
    erasereport <- function() {cat(paste(rep("\b",53), collapse = ""))}
    # check data
    if (!is.matrix(dta)) {stop("invalid data, expecting d x n matrix with d dimensions and n samples")}
-   if ((!all(is.finite(dta))) | is.null(dta) | (dim(dta)[2] == 0)) {
+   if ((!all(is.finite(dta))) | is.null(dta) | (ncol(dta) == 0)) {
       stop("invalid data (NULL, NA, NaN or Inf), fix invalid entries")
    }
-   d <- dim(dta)[1] # number of dimensions
-   n <- dim(dta)[2] # number of samples
+   d <- nrow(dta) # number of dimensions
+   n <- ncol(dta) # number of samples
    # probability space or root cuboid bounds and principal axis transform
    if (is.na(lb[1])) { # initialize principal axes or pre-whitening transform
-      if (dim(unique(dta, MARGIN = 2))[2] > 1) { # cov-matrix defined
-         A <- t(eigen(stats::cov(t(dta)))$vectors); mu <- rowMeans(dta)
+      A <- stats::cov(t(dta))
+      if (!all(A == 0)) { # principal axes or pre-whitening transform defined?
+         A <- t(eigen(A)$vectors); mu <- rowMeans(dta)
          dta <- A%*%(dta-mu%*%t(rep(1,n))) # transform to principal axes or pre-whitening
-      } else { # cov-matrix undefined
+      } else { # undefined
          A <- diag(nrow = d); mu <- rep(0,d) # no pre-whitening
       }
       lb <- 0; ub <- 0 # trigger initialization of bounds
@@ -88,14 +89,14 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
       ind <- seq(along = tosplit)[is.na(tosplit)]
       for (k in ind) {vol <- vol + prod(sze[[k]])}
       # keep track of probability densities of final elements
-      if (dim(tree)[1] < ne+2*sum(!is.na(tosplit))) { # allocate memory as needed
-         k <- max(mem, ne+2*sum(!is.na(tosplit)) - dim(tree)[1]) # (required) memory for next level
+      if (nrow(tree) < ne+2*sum(!is.na(tosplit))) { # allocate memory as needed
+         k <- max(mem, ne+2*sum(!is.na(tosplit)) - nrow(tree)) # (required) memory for next level
          tree <- rbind(tree, matrix(rep(NA,3*k), ncol = 3))
          sd <- c(sd, rep(NA,k)); sp <- c(sp, rep(NA,k))
          p <- c(p, rep(NA,k)); theta <- c(theta, rep(list(NA),k))
       }
       for (k in ind) { # set probability densities of final elements
-         p[dei[k]] <- (dim(x[[k]])[2])/n * 1/prod(sze[[k]]) # probability density of element
+         p[dei[k]] <- (ncol(x[[k]]))/n * 1/prod(sze[[k]]) # probability density of element
          theta[[dei[k]]] <- thetai[[k]] # pdf parameters of element
          m <- m+1 # counter of final elements
       }
@@ -113,11 +114,13 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
       nt <- nt + 1 # add new tree level
       # package data for parallel splitting of interim elements
       parents <- list(ind = 1:length(dei), tosplit = tosplit, x = x, sze = sze)
+      rm(x) # free memory
       parents <- lapply(seq_along(parents[[1]]), function(k) lapply(parents, "[[", k)) # transpose list
       # split interim elements in parallel (parent -> child1 + child2)
       cl <- parallel::parLapply(clster, parents, function(parent) {
          # split
          children <- de.split(parent$tosplit[1], parent$x, parent$sze, ne+2*parent$ind-1, mode)
+         parent$x <- NULL # free memory
          # prepare next splits
          if (length(parent$tosplit) > 1) { # 2nd split dimension from previous iteration
             children <- c(children, list(dim1 = parent$tosplit[2], theta1 = NA,
@@ -128,8 +131,9 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
             dt <- dimstosplit(children$x2, children$sze2, mode, alphag, alphad)
             children <- c(children, list(dim2 = dt$dim, theta2 = dt$theta))
          }
-         return(children)
+         return(children) # free memory
       })
+      rm(parents)
       # unpack data of children
       dei1 <- rep(NA,length(dei)); thetai1 <- rep(list(NA),length(dei)); tosplit1 <- thetai1; sze1 <- thetai1; x1 <- thetai1
       dei2 <- dei1; thetai2 <- thetai1; tosplit2 <- tosplit1; sze2 <- sze1; x2 <- x1
@@ -141,6 +145,7 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
          tosplit1[[k]] <- cl[[k]]$dim1; thetai1[[k]] <- cl[[k]]$theta1
          tosplit2[[k]] <- cl[[k]]$dim2; thetai2[[k]] <- cl[[k]]$theta2
       }
+      rm(cl) # free memory
 
       # update tree based on new elements (children)
       for (k in 1:length(dei)) {
@@ -157,6 +162,7 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
       # prepare interim elements data for next tree level
       dei <- c(dei1,dei2); thetai <- c(thetai1,thetai2)
       tosplit <- c(tosplit1,tosplit2); sze <- c(sze1,sze2); x <- c(x1,x2)
+      rm(x1,x2) # free memory
    } # loop over tree levels
 
    if (progress) {erasereport()}
@@ -180,14 +186,14 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
 #' @return An object comprised of the split dimension(s) or \code{NA} for no split, and the resulting child element parameters is returned.
 dimstosplit <- function(x, sze, mode, alphag, alphad) {
    # is there any data?
-   if (dim(x)[2] == 0) {return(list(dim = NA, theta = NA))}
+   if (ncol(x) == 0) {return(list(dim = NA, theta = NA))}
    # proceed with data
-   d <- dim(x)[1] # number of dimensions
+   d <- nrow(x) # number of dimensions
    theta <- rep(0,d); p1 <- matrix(rep(0,2*d), nrow = d); h <- rep(FALSE,d)
    p1[,2] <- 1/sze # keep track of de side lengths
    for (k in 1:d) { # loop over dimensions
       # don't test based on just one unique sample, accept hypothesized distribution instead
-      if (length(unique(x[k,])) <= 1) {next}
+      if (allequal(x[k, , drop = FALSE])) {next}
       # test distribution
       tst <- switch(abs(mode),
          c(chi2testuniform(x[k,], alphag), s = 0), # 1, hypothesis is uniform marginal distribution
@@ -205,7 +211,7 @@ dimstosplit <- function(x, sze, mode, alphag, alphad) {
          if (h[m[k]]) {dimens <- m[k]; break()}
       }
    } else {
-      if ((d > 1) & (dim(unique(x, MARGIN = 2))[2] >= 1)) { # no, check independence hypothesis
+      if ((d > 1) & (!allequal(x))) { # no, check independence hypothesis
          tst <- chi2indeptest(x, alphad); h <- tst$h; p2 <- tst$p
          pl <- matrix(rep(0,d^2 - d), ncol = 2) # list of p-values
          dl <- pl # list of dependent dimensions
@@ -247,10 +253,12 @@ dimstosplit <- function(x, sze, mode, alphag, alphad) {
 #' @return Object containing the properties of the resulting two child distribution elements and the split position within the parent element.
 de.split <- function(dimens, x, sze, id, mode) {
    # determine position of subdivision
-   if ((length(unique(x[dimens,])) <= 1) | (mode > 0)) { # empty or only one unique point
+   if ((ncol(x) == 0) | (mode > 0)) { # empty or equal size split
       pos <- 0.5
-   } else { # multiple points
-      pos <- stats::median(unique(x[dimens,]))
+   } else { # equal score split
+      pos <- stats::median(x[dimens,])
+      # avoid elements with size zero
+      if ((pos == 0) | (pos == 1)) {pos <- 0.5}
    }
    # first subcuboid
    de1 <- id
@@ -259,14 +267,37 @@ de.split <- function(dimens, x, sze, id, mode) {
    de2 <- id+1
    sze2 <- sze; sze2[dimens] <- sze2[dimens]*(1-pos)
    # samples in subcuboids
-   if (dim(x)[2] == 0) { # no data
-      x1 <- matrix(1, nrow = dim(x)[1], ncol = 0); x2 <- x1
+   if (ncol(x) == 0) { # no data
+      x1 <- matrix(1, nrow = nrow(x), ncol = 0); x2 <- x1
    } else { # split data
       ind <- (x[dimens,] <= pos) # samples in first subcuboid
       x1 <- x[,ind,drop = FALSE]
-      if (dim(x1)[2] > 0) {x1[dimens,] <- x1[dimens,]/pos} # rescale dim.
+      if (ncol(x1) > 0) {x1[dimens,] <- x1[dimens,]/pos} # rescale dim.
       x2 <- x[,!ind,drop = FALSE]
-      if (dim(x2)[2] > 0) {x2[dimens,] <- (x2[dimens,]-pos)/(1-pos)} # rescale dim.
+      if (ncol(x2) > 0) {x2[dimens,] <- (x2[dimens,]-pos)/(1-pos)} # rescale dim.
    }
    return(list(dei1 = de1, sze1 = sze1, x1 = x1, dei2 = de2, sze2 = sze2, x2 = x2, pos = pos))
 }
+
+#' Are All Columns in a Matrix Equal?
+#'
+#' Check if all column vectors in a matrix are equal.
+#'
+#' @param x matrix with column vectors.
+#'
+#' @return TRUE if matrix \code{x} has zero or one column, or if all column vectors in matrix \code{x} are equal. FALSE if \code{x} contains at least two different columns.
+#'
+# examples
+# allequal(matrix(vector("numeric", length = 0), nrow = 2))
+# allequal(matrix(rep(1,12), nrow = 3))
+# allequal(matrix(runif(6), nrow = 1))
+allequal <- function(x) {
+   r <- TRUE; n <- ncol(x)
+   if (n > 1) { # more than one vector
+      for (j in 2:n) { # loop over all vectors
+         if (any(x[,1] != x[,j])) {r <- FALSE; break}
+      }
+   }
+   return(r)
+}
+
