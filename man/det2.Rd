@@ -4,23 +4,25 @@
 \alias{det2}
 \title{Density Estimation for Bivariate Data Based on Distribution Element Trees}
 \usage{
-det2(x, mode = 2, bounds = list(NA, NA), alphag = 0.001, alphad = 0.001,
-  main = NULL, np = c(100, 100), cores = 0)
+det2(dta, mode = 2, bounds = list(NA, NA), alphag = 0.001,
+  alphad = 0.001, main = NULL, nc = 20, dtalim = Inf, cores = 1)
 }
 \arguments{
-\item{x}{matrix with two rows containing data points (columns).}
+\item{dta}{matrix with two rows containing data (samples in columns).}
 
 \item{mode}{order of distribution elements applied, default is \code{mode = 2}. Use \code{+/-1} for constant or \code{+/-2} for linear elements. \code{mode > 0} and \code{mode < 0} lead to equal-size and -score splits, respectively, in the element-refinement process.}
 
-\item{bounds}{\code{list(lb,ub)}, where \code{lb} and \code{ub} are vectors representing the lower and upper bounds of the probability space. If both bounds are set to NA (default) or 0, the bounds are determined based on the data \code{x}. Additionally, if the bounds are set to 0, pre-whitening is not applied to the data.}
+\item{bounds}{\code{list(lb,ub)}, where \code{lb} and \code{ub} are vectors representing the lower and upper bounds of the probability space. If both bounds are set to NA (default) or 0, the bounds are determined based on the data \code{dta}. Additionally, if the bounds are set to 0, pre-whitening is not applied to the data.}
 
 \item{alphag, alphad}{significance levels for goodness-of-fit and independence tests, respectively, in element refinement or splitting process. Default is \code{alphag = alphad = 1.0e-3}.}
 
-\item{main}{an overall plot title, see \code{\link[graphics]{title}}.}
+\item{main}{an overall plot title, see \code{\link[graphics]{title}}. If \code{main = NULL} (default), the density range is provided as a title.}
 
-\item{np}{vector with number of pixels in the first and second probability-space directions used for rendering the DET-based probability density estimate (default is \code{100x100}).}
+\item{nc}{number of contour levels (default is 20).}
 
-\item{cores}{number of cores for parallel tree construction and query (rendering). Default is \code{0} for automatic allocation, see \code{cores} in \code{\link{det.construct}} and \code{\link{det.query}}.}
+\item{dtalim}{allows to limit the number of samples used in tests guiding the element splitting process. Default is \code{dtalim = Inf}, which corresponds to using all available samples, see \code{\link{det.construct}}.}
+
+\item{cores}{number of cores for parallel tree construction. Default is \code{cores = 1} for serial processing, see \code{cores} in \code{\link{det.construct}}.}
 }
 \description{
 Two-dimensional piecewise linear or constant probability density estimator based on distribution element trees (DETs).
@@ -28,18 +30,16 @@ Two-dimensional piecewise linear or constant probability density estimator based
 \examples{
 ## uniform
 require(stats)
-det2(rbind(runif(5e3),1+2*runif(5e3)), mode = 1, bounds = list(c(-0.1,0),c(1.1,4)), cores = 1)
-det2(rbind(1:100,101:200), mode = 2, np = c(160,160), cores = 1) # data on a line
-
-grDevices::dev.off() # erase plot
+det2(rbind(runif(5e3),1+2*runif(5e3)), mode = 1, bounds = list(c(-0.1,0),c(1.1,4)))
+det2(rbind(1:100,101:200+runif(100)), mode = 2) # data on a line
 
 ## Gaussian
 require(stats); require(graphics); require(grDevices)
-n <- 1e3; x <- rnorm(n)
+n <- 5e3; x <- rnorm(n)
 x <- matrix(c(x, x+rnorm(n,0,0.5)), ncol = 2)
 split.screen(c(2,2))
 screen(3); plot(x, type = "p", pch = ".", main = "data")
-screen(1); det2(t(x), mode = 1, cores = 1, main = "constant det estimator")
-screen(2); det2(t(x), cores = 1, main = "linear det estimator")
-screen(4); det2(t(x), mode = 1, bounds = list(0,0), cores = 2, main = "const. det, no pre-white")
+screen(1); det2(t(x), mode = 1, main = "constant det estimator")
+screen(2); det2(t(x), main = "linear det estimator")
+screen(4); det2(t(x), mode = 1, bounds = list(0,0), main = "const. det, no pre-white")
 }

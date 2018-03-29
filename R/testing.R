@@ -81,10 +81,10 @@ chi2testlinear <- function(x, alpha) {
 #'
 #' Pearson's Chi-square test of pairwise mutual independence.
 #'
-#' @param x vector with normalized data between 0 and 1.
+#' @param x matrix with \code{n} rows comprised of normalized data between 0 and 1.
 #' @param alpha significance level.
 #'
-#' @return Object with test outcome \code{h = TRUE/FALSE} meaning rejection/acceptance of pairwise independence null hypothesis, and p-value or confidence level of acceptance.
+#' @return Object with test outcomes \code{h[i,j] = h[j,i] = TRUE/FALSE} for \code{1 <= i,j <= n} meaning rejection/acceptance of independence null hypothesis involving rows \code{i} and \code{j} of matrix \code{x}, and p-value or confidence level of acceptance.
 #'
 # examples
 # ## x[1,] and x[3,] are independent, but x[2,] = (x[1,] + uniform noise)/2
@@ -146,6 +146,7 @@ chi2testtable <- function(x, alpha, cf = FALSE) {
    # first try without eliminating duplicates (unique is an expensive operation)
    xu <- x
    for (t in 1:2) {
+      if (t == 2) {xu <- unique(x)} # second attempt, now without duplicates
       # number of bins based on rule of thumb [Cochran, Ann. of Math. Stat., 23(3),
       # section 7] and expression in [Mann & Wald, Ann. of Math. Stat., 13(3)], ...
       n <- length(xu) # number of (unique) samples
@@ -163,13 +164,14 @@ chi2testtable <- function(x, alpha, cf = FALSE) {
          # floor is used instead of round because round(0.5) -> 0 not 1 (!= matlab)
          if (j < k) {be[j+1] <- (xu[ns+1] + xu[ns])/2} # all but last bins
       }
-      # check if there are no zero bins
-      if (all(be[2:length(be)] != be[1:(length(be)-1)])) {break}
-      # second attempt, now without duplicates
-      xu <- unique(x)
+      # check if there are size-zero bins
+      if (any(be[2:length(be)] == be[1:(length(be)-1)])) {next}
+      # count samples in bins
+      co <- cut(x, breaks = be, include.lowest = TRUE) # convert data to factor
+      co <- table(co) # table with counts of factor levels
+      # check if there are empty bins
+      if (any(co == 0)) {next}
    }
    rm(xu) # free memory
-   co <- cut(x, breaks = be, include.lowest = TRUE) # convert data to factor
-   co <- table(co) # table with counts of factor levels
    return(list(co = co, be = be))
 }

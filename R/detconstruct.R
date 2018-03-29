@@ -7,32 +7,33 @@
 #' @param lb,ub vectors of length \code{d} with lower and upper sample-space bounds. If not provided or set to \code{NA} or \code{0}, the bounds are determined from the data \code{dta}. If bounds are provided or given as \code{0}, the data is not pre-whitened before the DET is computed.
 #' @param alphag,alphad significance levels for goodness-of-fit and independence tests, respectively, in element refinement or splitting process. Default is \code{alphag = alphad = 1.0e-3}. \code{alphad} is irrelevant for univariate data \code{dta} with \code{d = 1}.
 #' @param progress optional logical, if set to \code{TRUE}, a progress report about the DET construction process is provided.
-#' @param cores for large datasets, \code{cores > 1} allows for accelerated tree construction with parallel branch splitting. The default is \code{cores = 0}, which allocates half of the available cores (see \code{\link[parallel]{detectCores}}). \code{cores = 1} corresponds to serial tree construction.
+#' @param dtalim for large datasets, \code{det.construct} can be accelerated (with negligible impact on the resulting DET if \code{dtalim} is sufficiently large) by using only up to \code{dtalim} samples for element splitting tests. Setting \code{dtalim < n} impacts mainly the splitting at the tree root, with elements being large and thus containing many samples. Default is \code{dtalim = Inf}, which corresponds to using all available samples (no acceleration). When using \code{dtalim < n}, the samples have to be randomly arranged in \code{dta}: use for example \code{dta[,sample(1:ncol(dta), ncol(dta), replace = FALSE)]} to randomly rearrange the data.
+#' @param cores \code{> 1} allows for parallel tree construction or branch splitting using the indicated number of cores. With \code{cores = Inf}, half of the available cores (see \code{\link[parallel]{detectCores}}) are allocated. \code{cores = 1} corresponds to serial tree construction (default).
 #'
-#' @return A DET object which describes the DET structure and pre-white transform is returned.
+#' @return A DET object, which reflects the tree and pre-white transform, is returned.
 #' @references Meyer, D.W. (2016) \url{http://arxiv.org/abs/1610.00345} or Meyer, D.W., Statistics and Computing (2017) \url{https://doi.org/10.1007/s11222-017-9751-9} and Meyer, D.W. (2017) \url{http://arxiv.org/abs/1711.04632}
 #' @export
 #'
 #' @examples
-#' ## Gaussian data
+#' ## Gaussian mixture data
 #' require(stats)
-#' det <- det.construct(t(rnorm(1e5)), cores = 2) # default linear elements
-#' x <- t(seq(-4,4,0.05)); p <- det.query(det, x, cores = 2); plot(x, p, type = "l")
+#' det <- det.construct(t(c(rnorm(1e5),rnorm(1e4)/100+2))) # default linear det (mode = 2)
+#' x <- t(seq(-4,6,0.01)); p <- det.query(det, x); plot(x, p, type = "l")
 #'
 #' ## piecewise uniform data with peaks
-#' x <- matrix(c(rep(0,1e3),rep(1,1e3),2*runif(1e4),
+#' x <- matrix(c(rep(0,1e3),rep(1,1e3), 2*runif(1e4),
 #'               rep(0,5e2),rep(1,25e2),2*runif(9e3)), nrow = 2, byrow = TRUE)
-#' det <- det.construct(x, mode = 1, lb = 0, ub = 0, cores = 2) # constant elements
+#' det <- det.construct(x, mode = 1, lb = 0, ub = 0) # constant elements, no pre-whitening
 det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alphad = 1.0e-3,
-                          progress = TRUE, cores = 0) {
-   # setup cluster for parallel processing
-   if (cores <= 0) {cores <- max(1,ceiling(parallel::detectCores()/2))}
-   clster <- parallel::makeCluster(cores)
+                          progress = TRUE, dtalim = Inf, cores = 1) {
+   # setup cluster for parallel processing as needed
+   if (is.infinite(cores)) {cores <- max(1,ceiling(parallel::detectCores()/2))}
+   if (cores > 1) {clster <- parallel::makeCluster(cores)}
    # helper function to erase previously written progress report
    erasereport <- function() {cat(paste(rep("\b",53), collapse = ""))}
    # check data
    if (!is.matrix(dta)) {stop("invalid data, expecting d x n matrix with d dimensions and n samples")}
-   if ((!all(is.finite(dta))) | is.null(dta) | (ncol(dta) == 0)) {
+   if ((!all(is.finite(dta))) | (ncol(dta) == 0)) {
       stop("invalid data (NULL, NA, NaN or Inf), fix invalid entries")
    }
    d <- nrow(dta) # number of dimensions
@@ -74,7 +75,8 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
    dei <- c(1) # list of interim elements
    sze <- list(rep(1,d)) # size of root de (normalized)
    x <- list(dta) # samples belonging to interim elements
-   dt <- dimstosplit(x[[1]],sze[[1]],mode,alphag,alphad) # split of root de
+   dt <- dimstosplit(x[[1]][, 1:min(n,abs(dtalim)), drop = FALSE],
+                     sze[[1]], mode, alphag, alphad) # split of root de
    thetai <- list(dt$theta) # list of pdf parameters of interim elements
    tosplit <- list(dt$dim) # dimension(s) of interim elements to split (= NA for no split)
 
@@ -116,8 +118,8 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
       parents <- list(ind = 1:length(dei), tosplit = tosplit, x = x, sze = sze)
       rm(x) # free memory
       parents <- lapply(seq_along(parents[[1]]), function(k) lapply(parents, "[[", k)) # transpose list
-      # split interim elements in parallel (parent -> child1 + child2)
-      cl <- parallel::parLapply(clster, parents, function(parent) {
+      # split interim elements (parent -> child1 + child2)
+      split <- function(parent) {
          # split
          children <- de.split(parent$tosplit[1], parent$x, parent$sze, ne+2*parent$ind-1, mode)
          parent$x <- NULL # free memory
@@ -126,17 +128,25 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
             children <- c(children, list(dim1 = parent$tosplit[2], theta1 = NA,
                                          dim2 = parent$tosplit[2], theta2 = NA))
          } else { # no 2nd split dimension -> de hypothesis testing
-            dt <- dimstosplit(children$x1, children$sze1, mode, alphag, alphad)
+            n2 <- min(ncol(children$x1),abs(dtalim)); n1 <- 1; if (n2 == 0) {n1 <- 0}
+            dt <- dimstosplit(children$x1[, n1:n2, drop = FALSE],
+                              children$sze1, mode, alphag, alphad)
             children <- c(children, list(dim1 = dt$dim, theta1 = dt$theta))
-            dt <- dimstosplit(children$x2, children$sze2, mode, alphag, alphad)
+            n2 <- min(ncol(children$x2),abs(dtalim)); n1 <- 1; if (n2 == 0) {n1 <- 0}
+            dt <- dimstosplit(children$x2[, n1:n2, drop = FALSE],
+                              children$sze2, mode, alphag, alphad)
             children <- c(children, list(dim2 = dt$dim, theta2 = dt$theta))
          }
-         return(children) # free memory
-      })
-      rm(parents)
-      # unpack data of children
-      dei1 <- rep(NA,length(dei)); thetai1 <- rep(list(NA),length(dei)); tosplit1 <- thetai1; sze1 <- thetai1; x1 <- thetai1
-      dei2 <- dei1; thetai2 <- thetai1; tosplit2 <- tosplit1; sze2 <- sze1; x2 <- x1
+         return(children)
+      }
+      if (cores > 1) {cl <- parallel::parLapply(clster, parents, split)} # parallel
+      else {cl <- lapply(parents, split)} # serial
+      rm(parents) # free memory
+      # unpack children data
+      dei1 <- rep(NA,length(dei)); thetai1 <- rep(list(NA),length(dei))
+      tosplit1 <- thetai1; sze1 <- thetai1; x1 <- thetai1
+      dei2 <- dei1; thetai2 <- thetai1
+      tosplit2 <- tosplit1; sze2 <- sze1; x2 <- x1
       pos <- rep(NA,length(dei))
       for (k in 1:length(dei)) {
          dei1[k] <- cl[[k]]$dei1; sze1[[k]] <- cl[[k]]$sze1; x1[[k]] <- cl[[k]]$x1
@@ -166,9 +176,10 @@ det.construct <- function(dta, mode = 2, lb = NA, ub = NA, alphag = 1.0e-3, alph
    } # loop over tree levels
 
    if (progress) {erasereport()}
-   parallel::stopCluster(clster)
+   if (cores > 1) {parallel::stopCluster(clster)} # cleanup cluster
    # discard unnecessary memory
-   tree <- tree[1:ne,,drop = FALSE]; sd <- sd[1:ne]; sp <- sp[1:ne]; p <- p[1:ne]; theta <- theta[1:ne]
+   tree <- tree[1:ne,,drop = FALSE]; sd <- sd[1:ne]; sp <- sp[1:ne]
+   p <- p[1:ne]; theta <- theta[1:ne]
    # assemble output
    return(list(tree = tree, sd = sd, sp = sp, p = p, theta = theta, m = m, nt = nt,
                A = A, mu = mu, lb = lb, ub = ub))

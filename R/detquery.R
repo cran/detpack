@@ -1,10 +1,10 @@
-#' Density Estimation based on Distribution Element Trees
+#' Density Estimation Based on Distribution Element Trees
 #'
 #' The function \code{det.query} evaluates probability densities at the query points \code{x} based on a distribution element tree (DET). The latter is calculable with \code{\link{det.construct}} based on available data.
 #'
 #' @param det distribution element tree object resulting from \code{\link{det.construct}} based on data with \code{d} components or dimensions.
 #' @param x matrix containing \code{n} query points (columns) with \code{d} components or dimensions (rows).
-#' @param cores for large query-point sets, \code{cores > 1} allows for parallel tree query. The default is \code{cores = 0}, which allocates half of the available cores (see \code{\link[parallel]{detectCores}}). \code{cores = 1} corresponds to serial tree query.
+#' @param cores for large query-point sets, \code{cores > 1} allows for parallel tree query using the indicated number of cores. \code{cores = Inf} allocates half of the available cores (see \code{\link[parallel]{detectCores}}). The default is \code{cores = 1} corresponding to serial tree query.
 #'
 #' @return A vector containing the probability density at the query points \code{x} is returned.
 #' @export
@@ -12,15 +12,13 @@
 #' @examples
 #' ## 1d example
 #' require(stats); require(graphics)
-#' # DET generation based on Gaussian data
-#' det <- det.construct(matrix(rnorm(1e5,2,3), nrow = 1), cores = 2)
+#' # DET generation based on Gaussian/uniform data
+#' det <- det.construct(t(c(rnorm(1e5,2,3),runif(1e5)-3)))
 #' # density evaluation based on DET at equidistant query points
-#' x <- matrix(seq(-10,14,0.01), nrow = 1); p <- det.query(det, x, cores = 1)
-#' # compare DET estimate (black) against Gaussian reference (red)
+#' x <- t(seq(-10,14,0.01)); p <- det.query(det, x)
+#' # compare DET estimate (black) against Gaussian/uniform reference (red)
 #' plot(x, p, type = "l", col = "black")
-#' lines(x, dnorm(x,2,3), col = "red")
-#'
-#' grDevices::dev.off() # erase plot
+#' lines(x, (dnorm(x,2,3)+dunif(x+3))/2, col = "red")
 #'
 #' ## 2d example
 #' require(stats); require(graphics)
@@ -38,8 +36,8 @@
 #' split.screen(c(2, 2)); screen(1)
 #' plot(x, type = "p", pch = ".", asp = 1, main = "data")
 #' # DET estimator
-#' det <- det.construct(t(x), cores = 1)
-#' yd <- matrix(det.query(det, xp, cores = 2), nrow = np[1])
+#' det <- det.construct(t(x))
+#' yd <- matrix(det.query(det, xp), nrow = np[1])
 #' screen(2)
 #' image(list(x = x1, y = x2, z = yd), asp = 1,
 #'       col = grDevices::gray((100:0)/100), main = "det")
@@ -52,7 +50,7 @@
 #' screen(3)
 #' image(list(x = x1, y = x2, z = yr), asp = 1,
 #'       col = grDevices::gray((100:0)/100), main = "reference")
-det.query <- function(det, x, cores = 0) {
+det.query <- function(det, x, cores = 1) {
    # check data
    errorstrg <- sprintf(
       "invalid x, expecting d x n matrix with d = %i dimensions and n query points",
@@ -64,34 +62,39 @@ det.query <- function(det, x, cores = 0) {
    # transform and normalize query points
    x <- (det$A%*%(x-det$mu%*%t(rep(1,n))) - det$lb%*%t(rep(1,n))) /
       ((det$ub - det$lb)%*%t(rep(1,n))) # x in [0,1]
-   # setup cluster for parallel processing
-   if (cores <= 0) {cores <- max(1,ceiling(parallel::detectCores()/2))}
-   clster <- parallel::makeCluster(cores)
-   # loop over points in x
-   x <- split(x, col(x)) # matrix -> list of column vectors
-   p <- parallel::parLapply(clster, x, function(xk) {
-      # check if point xk is outside of bounds
-      if (any(xk < 0) | any(xk > 1)) {pk <- 0} # outside det bounds -> p = 0
+   x <- split(x, col(x)) # for list-apply, matrix -> list of column vectors
+   # determine density based on det estimator at point x
+   ddet <- function(x) {
+      # check if point x is outside of bounds
+      if (any(x < 0) | any(x > 1)) {p <- 0} # outside det bounds -> p = 0
       else { # inside det bounds -> find de
          ind <- 1 # start from root de
          while (!is.na(det$tree[ind,2])) { # loop until leaf or final de is found
             dimens <- det$sd[ind]; pos <- det$sp[ind] # split dimension & position
-            # xk in first or second child de?
-            if (xk[dimens] <= pos) { # first child
+            # x in first or second child de?
+            if (x[dimens] <= pos) { # first child
                ind <- det$tree[ind,2] # de index
-               xk[dimens] <- xk[dimens] / pos # renormalize component
+               x[dimens] <- x[dimens] / pos # renormalize component
             } else { # second child
                ind <- det$tree[ind,3] # de index
-               xk[dimens] <- (xk[dimens]-pos) / (1-pos) # renormalize component
+               x[dimens] <- (x[dimens]-pos) / (1-pos) # renormalize component
             }
          }
          # determine probability density
-         pk <- det$p[ind]
-         if (pk > 0) {pk <- pk * prod(((xk-1/2)*det$theta[[ind]]+1))}
+         p <- det$p[ind]
+         if (p > 0) {p <- p * prod(((x-1/2)*det$theta[[ind]]+1))}
       }
-      return(pk)
-   })
-   parallel::stopCluster(clster)
+      return(p)
+   }
+   # loop over points in x
+   if (cores > 1) { # parallel processing
+      if (is.infinite(cores)) {cores <- max(1,ceiling(parallel::detectCores()/2))}
+      clster <- parallel::makeCluster(cores)
+      p <- parallel::parLapply(clster, x, ddet)
+      parallel::stopCluster(clster)
+   } else { # serial
+      p <- lapply(x, ddet)
+   }
    # rescale
    p <- unlist(p) / prod(det$ub - det$lb)
    return(p)

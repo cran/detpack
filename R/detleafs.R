@@ -12,7 +12,7 @@
 #' # generate DET based on bi-variate Gaussian data
 #' n <- 1e4; x <- rnorm(n)
 #' x <- matrix(c(x, x+rnorm(n,0,0.2)), nrow = 2, byrow = TRUE)
-#' det <- det.construct(x, cores = 1)
+#' det <- det.construct(x)
 #' # plot data and element pattern
 #' leafs <- det.leafs(det)
 #' plot(t(x), type = "p", pch = ".", asp = 1)
@@ -50,7 +50,7 @@ det.leafs <- function(det) {
 #' @param det distribution element tree object resulting from \code{\link{det.construct}}.
 #' @param ind index of element to extract from \code{det}.
 #'
-#' @return A list with the element characteristics is returned: \code{p} probability density, \code{theta} element parameters, \code{lb} lower bound, \code{size} element size, \code{div} divisions or splits along dimensions leading to final element.
+#' @return A list with the element characteristics is returned: \code{p} probability density, \code{theta} element parameters, \code{lb} lower bound, \code{size} of element, \code{div} divisions or splits along dimensions leading to final element.
 #' @export
 det.de <- function(det, ind) {
    d <- length(det$lb) # number of dimensions

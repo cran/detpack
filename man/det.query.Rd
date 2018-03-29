@@ -2,16 +2,16 @@
 % Please edit documentation in R/detquery.R
 \name{det.query}
 \alias{det.query}
-\title{Density Estimation based on Distribution Element Trees}
+\title{Density Estimation Based on Distribution Element Trees}
 \usage{
-det.query(det, x, cores = 0)
+det.query(det, x, cores = 1)
 }
 \arguments{
 \item{det}{distribution element tree object resulting from \code{\link{det.construct}} based on data with \code{d} components or dimensions.}
 
 \item{x}{matrix containing \code{n} query points (columns) with \code{d} components or dimensions (rows).}
 
-\item{cores}{for large query-point sets, \code{cores > 1} allows for parallel tree query. The default is \code{cores = 0}, which allocates half of the available cores (see \code{\link[parallel]{detectCores}}). \code{cores = 1} corresponds to serial tree query.}
+\item{cores}{for large query-point sets, \code{cores > 1} allows for parallel tree query using the indicated number of cores. \code{cores = Inf} allocates half of the available cores (see \code{\link[parallel]{detectCores}}). The default is \code{cores = 1} corresponding to serial tree query.}
 }
 \value{
 A vector containing the probability density at the query points \code{x} is returned.
@@ -22,15 +22,13 @@ The function \code{det.query} evaluates probability densities at the query point
 \examples{
 ## 1d example
 require(stats); require(graphics)
-# DET generation based on Gaussian data
-det <- det.construct(matrix(rnorm(1e5,2,3), nrow = 1), cores = 2)
+# DET generation based on Gaussian/uniform data
+det <- det.construct(t(c(rnorm(1e5,2,3),runif(1e5)-3)))
 # density evaluation based on DET at equidistant query points
-x <- matrix(seq(-10,14,0.01), nrow = 1); p <- det.query(det, x, cores = 1)
-# compare DET estimate (black) against Gaussian reference (red)
+x <- t(seq(-10,14,0.01)); p <- det.query(det, x)
+# compare DET estimate (black) against Gaussian/uniform reference (red)
 plot(x, p, type = "l", col = "black")
-lines(x, dnorm(x,2,3), col = "red")
-
-grDevices::dev.off() # erase plot
+lines(x, (dnorm(x,2,3)+dunif(x+3))/2, col = "red")
 
 ## 2d example
 require(stats); require(graphics)
@@ -48,8 +46,8 @@ xp <- rbind(rep(x1,np[2]), rep(x2,each = np[1])) # grid points
 split.screen(c(2, 2)); screen(1)
 plot(x, type = "p", pch = ".", asp = 1, main = "data")
 # DET estimator
-det <- det.construct(t(x), cores = 1)
-yd <- matrix(det.query(det, xp, cores = 2), nrow = np[1])
+det <- det.construct(t(x))
+yd <- matrix(det.query(det, xp), nrow = np[1])
 screen(2)
 image(list(x = x1, y = x2, z = yd), asp = 1,
       col = grDevices::gray((100:0)/100), main = "det")

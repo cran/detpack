@@ -24,7 +24,7 @@ Identify distribution element tree (DET) leafs that are cut by conditions. The l
 require(stats); require(graphics)
 n <- 8e4; x <- rnorm(n)
 x <- matrix(c(x, x+rnorm(n,0,0.2)), ncol = 2)
-det <- det.construct(t(x), lb = 0, ub = 0, cores = 2) # no pre-whitening
+det <- det.construct(t(x), lb = 0, ub = 0) # no pre-whitening
 plot(x, type = "p", pch = ".", asp = 1)
 # leaf elements that are cut by x1 = 2
 leafs <- det.cut(det, xc = 2, dc = 1) # condition x1 = 2

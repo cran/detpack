@@ -1,11 +1,18 @@
+2018-03-28: Daniel Meyer <meyerda@ethz.ch>
+    * Version: 1.1.0
+    * detconstruct.R, det1.R, det2.R: Added option to limit sample size for split tests
+    * detconstruct.R, detquery.R, detrnd.R: Separate treatment of serial processing
+    * det2.R: Faster rendering
+    * testing.R: Bug fix in chi2testtable
+
 2018-01-22: Daniel Meyer <meyerda@ethz.ch>
     * Version: 1.0.1
-    * DESCRIPTION, detpack.R, detrnd.R, det2.R: Updating docu and examples
+    * DESCRIPTION, detpack.R, detrnd.R, det2.R: Updated docu and examples
     * detconstruct.R, testing.R: Performance enhancements
 
 2018-01-17: Daniel Meyer <meyerda@ethz.ch>
     * Version: 1.0.0
-    * DESCRIPTION, detconstruct.R, detpack.R: Completion of literature references
+    * DESCRIPTION, detconstruct.R, detpack.R: Completed literature references
 
 2018-01-16: Daniel Meyer <meyerda@ethz.ch>
     * NEWS: Added file for tracking changes

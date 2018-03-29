@@ -5,7 +5,7 @@
 \title{Distribution Element Tree (DET) Construction}
 \usage{
 det.construct(dta, mode = 2, lb = NA, ub = NA, alphag = 0.001,
-  alphad = 0.001, progress = TRUE, cores = 0)
+  alphad = 0.001, progress = TRUE, dtalim = Inf, cores = 1)
 }
 \arguments{
 \item{dta}{matrix with \code{d} rows representing components or dimensions and \code{n} columns corresponding to data points or samples.}
@@ -18,24 +18,26 @@ det.construct(dta, mode = 2, lb = NA, ub = NA, alphag = 0.001,
 
 \item{progress}{optional logical, if set to \code{TRUE}, a progress report about the DET construction process is provided.}
 
-\item{cores}{for large datasets, \code{cores > 1} allows for accelerated tree construction with parallel branch splitting. The default is \code{cores = 0}, which allocates half of the available cores (see \code{\link[parallel]{detectCores}}). \code{cores = 1} corresponds to serial tree construction.}
+\item{dtalim}{for large datasets, \code{det.construct} can be accelerated (with negligible impact on the resulting DET if \code{dtalim} is sufficiently large) by using only up to \code{dtalim} samples for element splitting tests. Setting \code{dtalim < n} impacts mainly the splitting at the tree root, with elements being large and thus containing many samples. Default is \code{dtalim = Inf}, which corresponds to using all available samples (no acceleration). When using \code{dtalim < n}, the samples have to be randomly arranged in \code{dta}: use for example \code{dta[,sample(1:ncol(dta), ncol(dta), replace = FALSE)]} to randomly rearrange the data.}
+
+\item{cores}{\code{> 1} allows for parallel tree construction or branch splitting using the indicated number of cores. With \code{cores = Inf}, half of the available cores (see \code{\link[parallel]{detectCores}}) are allocated. \code{cores = 1} corresponds to serial tree construction (default).}
 }
 \value{
-A DET object which describes the DET structure and pre-white transform is returned.
+A DET object, which reflects the tree and pre-white transform, is returned.
 }
 \description{
 The function \code{det.construct} generates a distribution element tree DET from available data. The DET can be used firstly in connection with \code{\link{det.query}} for density estimation. Secondly, with \code{\link{det.rnd}}, DETs can be used for smooth bootstrapping or more specifically conditional or unconditional random number generation.
 }
 \examples{
-## Gaussian data
+## Gaussian mixture data
 require(stats)
-det <- det.construct(t(rnorm(1e5)), cores = 2) # default linear elements
-x <- t(seq(-4,4,0.05)); p <- det.query(det, x, cores = 2); plot(x, p, type = "l")
+det <- det.construct(t(c(rnorm(1e5),rnorm(1e4)/100+2))) # default linear det (mode = 2)
+x <- t(seq(-4,6,0.01)); p <- det.query(det, x); plot(x, p, type = "l")
 
 ## piecewise uniform data with peaks
-x <- matrix(c(rep(0,1e3),rep(1,1e3),2*runif(1e4),
+x <- matrix(c(rep(0,1e3),rep(1,1e3), 2*runif(1e4),
               rep(0,5e2),rep(1,25e2),2*runif(9e3)), nrow = 2, byrow = TRUE)
-det <- det.construct(x, mode = 1, lb = 0, ub = 0, cores = 2) # constant elements
+det <- det.construct(x, mode = 1, lb = 0, ub = 0) # constant elements, no pre-whitening
 }
 \references{
 Meyer, D.W. (2016) \url{http://arxiv.org/abs/1610.00345} or Meyer, D.W., Statistics and Computing (2017) \url{https://doi.org/10.1007/s11222-017-9751-9} and Meyer, D.W. (2017) \url{http://arxiv.org/abs/1711.04632}

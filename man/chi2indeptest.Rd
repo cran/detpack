@@ -7,12 +7,12 @@
 chi2indeptest(x, alpha)
 }
 \arguments{
-\item{x}{vector with normalized data between 0 and 1.}
+\item{x}{matrix with \code{n} rows comprised of normalized data between 0 and 1.}
 
 \item{alpha}{significance level.}
 }
 \value{
-Object with test outcome \code{h = TRUE/FALSE} meaning rejection/acceptance of pairwise independence null hypothesis, and p-value or confidence level of acceptance.
+Object with test outcomes \code{h[i,j] = h[j,i] = TRUE/FALSE} for \code{1 <= i,j <= n} meaning rejection/acceptance of independence null hypothesis involving rows \code{i} and \code{j} of matrix \code{x}, and p-value or confidence level of acceptance.
 }
 \description{
 Pearson's Chi-square test of pairwise mutual independence.

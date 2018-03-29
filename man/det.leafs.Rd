@@ -20,7 +20,7 @@ require(stats); require(graphics)
 # generate DET based on bi-variate Gaussian data
 n <- 1e4; x <- rnorm(n)
 x <- matrix(c(x, x+rnorm(n,0,0.2)), nrow = 2, byrow = TRUE)
-det <- det.construct(x, cores = 1)
+det <- det.construct(x)
 # plot data and element pattern
 leafs <- det.leafs(det)
 plot(t(x), type = "p", pch = ".", asp = 1)
