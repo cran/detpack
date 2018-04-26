@@ -5,7 +5,8 @@
 \title{Density Estimation for Bivariate Data Based on Distribution Element Trees}
 \usage{
 det2(dta, mode = 2, bounds = list(NA, NA), alphag = 0.001,
-  alphad = 0.001, main = NULL, nc = 20, dtalim = Inf, cores = 1)
+  alphad = 0.001, main = NULL, nc = 20, dtalim = Inf, cores = 1,
+  color = grDevices::colorRamp(c("white", "black")))
 }
 \arguments{
 \item{dta}{matrix with two rows containing data (samples in columns).}
@@ -23,6 +24,8 @@ det2(dta, mode = 2, bounds = list(NA, NA), alphag = 0.001,
 \item{dtalim}{allows to limit the number of samples used in tests guiding the element splitting process. Default is \code{dtalim = Inf}, which corresponds to using all available samples, see \code{\link{det.construct}}.}
 
 \item{cores}{number of cores for parallel tree construction. Default is \code{cores = 1} for serial processing, see \code{cores} in \code{\link{det.construct}}.}
+
+\item{color}{function to assign plot colors that is generated, e.g., by \code{\link[grDevices]{colorRamp}}. \code{color} returns a color based on an argument in \code{[0,1]}.}
 }
 \description{
 Two-dimensional piecewise linear or constant probability density estimator based on distribution element trees (DETs).
@@ -38,8 +41,12 @@ require(stats); require(graphics); require(grDevices)
 n <- 5e3; x <- rnorm(n)
 x <- matrix(c(x, x+rnorm(n,0,0.5)), ncol = 2)
 split.screen(c(2,2))
+color = colorRamp(c("#FFFFFF","#E6E680","#E6BF1A",
+                    "#E68000","#FF4026","#993380",
+                    "#4D26BF","#262680","#000000"))
 screen(3); plot(x, type = "p", pch = ".", main = "data")
-screen(1); det2(t(x), mode = 1, main = "constant det estimator")
-screen(2); det2(t(x), main = "linear det estimator")
-screen(4); det2(t(x), mode = 1, bounds = list(0,0), main = "const. det, no pre-white")
+screen(1); det2(t(x), mode = 1, main = "constant det estimator", color = color)
+screen(2); det2(t(x), main = "linear det estimator", color = color)
+screen(4)
+det2(t(x), mode = 1, bounds = list(0,0), main = "const. det, no pre-white", color = color)
 }

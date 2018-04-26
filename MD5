@@ -1,12 +1,12 @@
-1fd2073514520e5e200ad9b6dabd67ac *DESCRIPTION
+36a13252d951f727dfd4cc0b12dc5c7f *DESCRIPTION
 dc5e5832a9d4666dc7d3edf18ed94d86 *NAMESPACE
-465b96d957db3ebdf69eca00259c3c43 *NEWS
+a2d2d3db8456df952e6784a12a8e60d5 *NEWS
 14023258b3885f895d6cee7aa00ac9b7 *R/det1.R
-a33e4a5aa716d78e5a2fd2827704d23a *R/det2.R
+277a79a0ab1b1b00e43127d010f5ffda *R/det2.R
 3d52f59bb8168648236f95dc100addf5 *R/detconstruct.R
 404ef2e5a98143695464b08dd48296f4 *R/detleafs.R
 9a1592f15e8b84495ab41264f5ef20e1 *R/detpack.R
-2908b983cfa60b02b2ce236ef1819494 *R/detquery.R
+7f5396b22d2c5986e5ccc0b9d6aac283 *R/detquery.R
 31dda1b356b75ff6bd151a02fce17c3c *R/detrnd.R
 f7121118b67b83693e5ad98764f93741 *R/testing.R
 1d2167cbdb6215a3daa2fb53acd32ffd *man/allequal.Rd
@@ -14,7 +14,7 @@ c2dd6e3c095e4efbebfddbbd38eafb6c *man/chi2indeptest.Rd
 d542de5235b8086da2686a94683ef05d *man/chi2testlinear.Rd
 33d8dd3dae5e248df90f6922f36a0cad *man/chi2testtable.Rd
 5dfa45342cad1641275ccd2b5de62b22 *man/chi2testuniform.Rd
-7f858a671480397dfff630d5123ac805 *man/contourRect.Rd
+60ec5f2263e07b85ff3dc4d1f121a39a *man/contourRect.Rd
 a73eaf00ce844939da17d4cbf1627dab *man/de.split.Rd
 48a17ce2c6ebbced4f9b1473c3a05a8e *man/det.construct.Rd
 ba45c1d5cf2c4e6efe0e92d1cc6fb867 *man/det.cut.Rd
@@ -23,6 +23,6 @@ ba45c1d5cf2c4e6efe0e92d1cc6fb867 *man/det.cut.Rd
 ef5260689118c2f66a9b827ba0ec1240 *man/det.query.Rd
 ca8a86912494c8e5e822ca11ad738fe7 *man/det.rnd.Rd
 782e90b4df4c93304ae71d8b05fe2506 *man/det1.Rd
-822ffb2db4a08142497bf43449210be6 *man/det2.Rd
+5a6f6d4fa77add54641b04b453d3b4ea *man/det2.Rd
 b547427f3d4d54dd8fb999c333f81a08 *man/detpack.Rd
 f0b0940142d91ff8212e4d2c8b41e654 *man/dimstosplit.Rd

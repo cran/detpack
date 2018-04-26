@@ -1,3 +1,8 @@
+2018-04-26: Daniel Meyer <meyerda@ethz.ch>
+    * Version: 1.1.1
+    * detquery.R: Bug fix
+    * det2.R: Support for color ramps added
+
 2018-03-28: Daniel Meyer <meyerda@ethz.ch>
     * Version: 1.1.0
     * detconstruct.R, det1.R, det2.R: Added option to limit sample size for split tests

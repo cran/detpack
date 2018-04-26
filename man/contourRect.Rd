@@ -4,7 +4,8 @@
 \alias{contourRect}
 \title{Draw Contours in a Rectangle}
 \usage{
-contourRect(xy, z, n = 20, zlb = 0, zub = 1)
+contourRect(xy, z, n = 20, zlb = 0, zub = 1,
+  color = grDevices::colorRamp(c("white", "black")))
 }
 \arguments{
 \item{xy}{matrix with two rows and four columns containing x- and y-coordinates of the four corner points of the rectangle. The corner points are ordered in clockwise or counter-clockwise direction.}
@@ -14,6 +15,8 @@ contourRect(xy, z, n = 20, zlb = 0, zub = 1)
 \item{n}{\code{abs(n)} gives the number of local or global contour levels. If \code{n > 0}, \code{n} local contours are drawn within \code{[min(z),max(z)]}. If \code{n < 0}, \code{n} global contours result in \code{[zlb,zub]}, but only the contours falling inside \code{[min(z),max(z)]} are drawn.}
 
 \item{zlb, zub}{determines the global range of z-values used to determine the contour colors. All values in \code{z} have to be contained in \code{[zlb,zub]}.}
+
+\item{color}{function to assign plot colors that is generated, e.g., by \code{\link[grDevices]{colorRamp}}. \code{color} returns a color based on an argument in \code{[0,1]}.}
 }
 \description{
 The function \code{contourRect} draws the z contour levels of a rectangular domain in x-y-space with z-values given at the corners of the rectangle.

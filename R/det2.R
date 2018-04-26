@@ -10,6 +10,7 @@
 #' @param nc number of contour levels (default is 20).
 #' @param dtalim allows to limit the number of samples used in tests guiding the element splitting process. Default is \code{dtalim = Inf}, which corresponds to using all available samples, see \code{\link{det.construct}}.
 #' @param cores number of cores for parallel tree construction. Default is \code{cores = 1} for serial processing, see \code{cores} in \code{\link{det.construct}}.
+#' @param color function to assign plot colors that is generated, e.g., by \code{\link[grDevices]{colorRamp}}. \code{color} returns a color based on an argument in \code{[0,1]}.
 #'
 #' @export
 #'
@@ -24,12 +25,17 @@
 #' n <- 5e3; x <- rnorm(n)
 #' x <- matrix(c(x, x+rnorm(n,0,0.5)), ncol = 2)
 #' split.screen(c(2,2))
+#' color = colorRamp(c("#FFFFFF","#E6E680","#E6BF1A",
+#'                     "#E68000","#FF4026","#993380",
+#'                     "#4D26BF","#262680","#000000"))
 #' screen(3); plot(x, type = "p", pch = ".", main = "data")
-#' screen(1); det2(t(x), mode = 1, main = "constant det estimator")
-#' screen(2); det2(t(x), main = "linear det estimator")
-#' screen(4); det2(t(x), mode = 1, bounds = list(0,0), main = "const. det, no pre-white")
+#' screen(1); det2(t(x), mode = 1, main = "constant det estimator", color = color)
+#' screen(2); det2(t(x), main = "linear det estimator", color = color)
+#' screen(4)
+#' det2(t(x), mode = 1, bounds = list(0,0), main = "const. det, no pre-white", color = color)
 det2 <- function(dta, mode = 2, bounds = list(NA,NA), alphag = 1.0e-3, alphad = 1.0e-3,
-                 main = NULL, nc = 20, dtalim = Inf, cores = 1) {
+                 main = NULL, nc = 20, dtalim = Inf, cores = 1,
+                 color = grDevices::colorRamp(c("white", "black"))) {
    # check data
    errorstrg <- "dta should be a matrix with two rows comprised of finite numbers"
    if (is.matrix(dta) & all(is.finite(dta))) {
@@ -46,7 +52,7 @@ det2 <- function(dta, mode = 2, bounds = list(NA,NA), alphag = 1.0e-3, alphad = 
    else {if (all(bounds[[2]] == 0)) {bounds[[2]] = det$ub}}
    # determine pdf range
    leafs <- det.leafs(det)
-   d <- matrix(rep(0,length(leafs$p)*4), nrow = length(leafs$p)) # pdf element corners
+   d <- matrix(rep(0,length(leafs$p)*4), nrow = length(leafs$p)) # pdf at element corners
    for (k in 1:length(leafs$p)) { # loop over distribution elements or tree leafs
       # element distribution
       if (leafs$p[k] == 0) { # theta undefined for empty elements
@@ -61,8 +67,8 @@ det2 <- function(dta, mode = 2, bounds = list(NA,NA), alphag = 1.0e-3, alphad = 
    dmin <- 0; dmax <- max(d)
    # plot det element-by-element
    if (is.null(main)) {
-      main <- paste("white",format(dmin, digits = 3),
-                    "...", format(dmax, digits = 3, scientific = TRUE), "black")
+      main <- paste("color range",format(dmin, digits = 3),
+                    "...", format(dmax, digits = 3, scientific = TRUE))
    } # plot title = density range if main is not given
    graphics::plot(0, type="n", xlab="x1", ylab="x2", main = main,
                   xlim=c(bounds[[1]][1], bounds[[2]][1]),
@@ -74,7 +80,7 @@ det2 <- function(dta, mode = 2, bounds = list(NA,NA), alphag = 1.0e-3, alphad = 
       xy[,3] <- c(leafs$lb[1,k]+leafs$size[1,k], leafs$lb[2,k]+leafs$size[2,k])
       xy[,4] <- c(leafs$lb[1,k], leafs$lb[2,k]+leafs$size[2,k])
       xy <- t(det$A) %*% xy + det$mu %*% t(rep(1,4)) # pre-white transform
-      contourRect(xy, d[k,], -abs(nc), dmin, dmax) # draw element
+      contourRect(xy, d[k,], -abs(nc), dmin, dmax, color) # draw element
    }
 }
 
@@ -86,6 +92,7 @@ det2 <- function(dta, mode = 2, bounds = list(NA,NA), alphag = 1.0e-3, alphad = 
 #' @param z vector with four z-values at the four corner points.
 #' @param n \code{abs(n)} gives the number of local or global contour levels. If \code{n > 0}, \code{n} local contours are drawn within \code{[min(z),max(z)]}. If \code{n < 0}, \code{n} global contours result in \code{[zlb,zub]}, but only the contours falling inside \code{[min(z),max(z)]} are drawn.
 #' @param zlb,zub determines the global range of z-values used to determine the contour colors. All values in \code{z} have to be contained in \code{[zlb,zub]}.
+#' @param color function to assign plot colors that is generated, e.g., by \code{\link[grDevices]{colorRamp}}. \code{color} returns a color based on an argument in \code{[0,1]}.
 #'
 # examples
 # graphics::plot(0, type="n", xlab="", ylab="", xlim=c(0, 3), ylim=c(10, 13))
@@ -94,15 +101,12 @@ det2 <- function(dta, mode = 2, bounds = list(NA,NA), alphag = 1.0e-3, alphad = 
 # contourRect(matrix(c(0,11.5,1,11.5,1,13,0,13), nrow = 2), c(1.3,1.6,2,2), n, zlb, zub)
 # contourRect(matrix(c(1,10,3,10,3,11.5,1,11.5), nrow = 2), c(1,0.2,2,1.6), n, zlb, zub)
 # contourRect(matrix(c(1,11.5,3,11.5,3,13,1,13), nrow = 2), c(1.6,2,2,2), n, zlb, zub)
-contourRect <- function(xy, z, n = 20, zlb = 0, zub = 1) {
-   #color <- function(v) {return(grDevices::hsv(1,0,max(0,min(v,1))))} # gray scale
-   color <- function(v) {
-      v <- 1-v
-      r <- stats::spline(x = 1:9, y = c(0,0.15,0.3,0.6,1,0.9,0.9,0.9,1), xout = 9*v)$y
-      g <- stats::spline(x = 1:9, y = c(0,0.15,0.15,0.2,0.25,0.5,0.75,0.9,1), xout = 9*v)$y
-      b <- stats::spline(x = 1:9, y = c(0,0.5,0.75,0.5,0.15,0,0.1,0.5,1), xout = 9*v)$y
-      return(grDevices::rgb(max(0,min(r,1)),max(0,min(g,1)),max(0,min(b,1))))
-   } # color scale
+contourRect <- function(xy, z, n = 20, zlb = 0, zub = 1,
+                        color = grDevices::colorRamp(c("white", "black"))) {
+   z2color <- function(z) { # converts z in [0,1] to hex color
+      c <- color(z) # rgb color with r,g,b in [0,255]
+      return(grDevices::rgb(c[1], c[2], c[3], max = 255)) # rgb to hex color
+   }
    zmin <- min(z); zmax <- max(z)
    # check input
    if ((zlb > zmin) | (zub < zmax)) stop("z should be inside [zlb,zub]")
@@ -116,7 +120,7 @@ contourRect <- function(xy, z, n = 20, zlb = 0, zub = 1) {
    }
    # draw lowest contour level at zmin (rectangle)
    graphics::polygon(xy[1,], xy[2,], border = NA,
-                     col = color((zmin-zlb)/(zub-zlb)))
+                     col = z2color((zmin-zlb)/(zub-zlb)))
    if ((zmax > zmin) & (n != 0)) {
       # close rectangle
       xy <- cbind(xy,xy[,1]); z <- c(z, z[1])
@@ -137,7 +141,7 @@ contourRect <- function(xy, z, n = 20, zlb = 0, zub = 1) {
          # draw contour polygon (involving more than two points)
          if (m > 2) {
             graphics::polygon(xyp[1,1:m], xyp[2,1:m], border = NA,
-                              col = color((zl-zlb)/(zub-zlb)))
+                              col = z2color((zl-zlb)/(zub-zlb)))
          }
       } # for l
    }

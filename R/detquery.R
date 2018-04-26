@@ -56,7 +56,7 @@ det.query <- function(det, x, cores = 1) {
       "invalid x, expecting d x n matrix with d = %i dimensions and n query points",
       length(det$lb))
    if (is.matrix(x)) {
-      if (ncol(x) == length(det$lb)) {stop(errorstrg)}
+      if (nrow(x) != length(det$lb)) {stop(errorstrg)}
    } else {stop(errorstrg)}
    n <- ncol(x) # number of points
    # transform and normalize query points
