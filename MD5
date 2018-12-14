@@ -1,13 +1,13 @@
-36a13252d951f727dfd4cc0b12dc5c7f *DESCRIPTION
+fc32bdd9865fc24224baed5025187658 *DESCRIPTION
 dc5e5832a9d4666dc7d3edf18ed94d86 *NAMESPACE
-a2d2d3db8456df952e6784a12a8e60d5 *NEWS
+59f96f6fe40f6486e15289a01484112d *NEWS
 14023258b3885f895d6cee7aa00ac9b7 *R/det1.R
 277a79a0ab1b1b00e43127d010f5ffda *R/det2.R
 3d52f59bb8168648236f95dc100addf5 *R/detconstruct.R
 404ef2e5a98143695464b08dd48296f4 *R/detleafs.R
-9a1592f15e8b84495ab41264f5ef20e1 *R/detpack.R
+2a68f982e7ff9bf4c40bd96b55cd728e *R/detpack.R
 7f5396b22d2c5986e5ccc0b9d6aac283 *R/detquery.R
-31dda1b356b75ff6bd151a02fce17c3c *R/detrnd.R
+554da7dc7d12082c05189afe3e2be97c *R/detrnd.R
 f7121118b67b83693e5ad98764f93741 *R/testing.R
 1d2167cbdb6215a3daa2fb53acd32ffd *man/allequal.Rd
 c2dd6e3c095e4efbebfddbbd38eafb6c *man/chi2indeptest.Rd
@@ -24,5 +24,5 @@ ef5260689118c2f66a9b827ba0ec1240 *man/det.query.Rd
 ca8a86912494c8e5e822ca11ad738fe7 *man/det.rnd.Rd
 782e90b4df4c93304ae71d8b05fe2506 *man/det1.Rd
 5a6f6d4fa77add54641b04b453d3b4ea *man/det2.Rd
-b547427f3d4d54dd8fb999c333f81a08 *man/detpack.Rd
+ca24fb8512923e446d00b3b4d8bfc269 *man/detpack.Rd
 f0b0940142d91ff8212e4d2c8b41e654 *man/dimstosplit.Rd

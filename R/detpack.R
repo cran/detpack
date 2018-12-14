@@ -13,7 +13,7 @@
 #' @references
 #' Distribution element tree basics and density estimation, see Meyer, D.W. (2016) \url{http://arxiv.org/abs/1610.00345} or Meyer, D.W., Statistics and Computing (2017) \url{https://doi.org/10.1007/s11222-017-9751-9}.
 #'
-#' DETs for smooth bootstrapping, see Meyer, D.W. (2017) \url{http://arxiv.org/abs/1711.04632}.
+#' DETs for smooth bootstrapping, see Meyer, D.W. (2017) \url{http://arxiv.org/abs/1711.04632} or Meyer, D.W., Journal of Computational and Graphical Statistics (2018) \url{https://doi.org/10.1080/10618600.2018.1482768}.
 #'
 #' @author Daniel Meyer, \email{meyerda@@ethz.ch}
 #'

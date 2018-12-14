@@ -110,12 +110,12 @@ det.rnd <- function(n, det, xc = vector("numeric", length = 0),
             x0 <- lb[dimens,ind]; x1 <- lb[dimens,ind]+size[dimens,ind]
             if (is.na(theta[ind])) {sl <- 0} else {sl <- theta[[ind]][dimens]}
             k <- k+1 # increment counter
-            if (sl == 0) { # constant de with uniform pdf
+            if (abs(sl) < 1e-6) { # constant de with uniform pdf
                x[dimens] <- x0 + (x1-x0)*r[k]
             } else { # linear de with linear pdf
                # generate sample from inverse cdf
-               a <- sqrt((4 + sl*(sl+8*r[k]-4)) / (x1-x0)^2)
-               x[dimens] <- 1/(2*sl) * (x0^2*a + x0*(sl+2-2*a*x1) + x1*(sl-2+a*x1))
+               a <- sqrt(4 + sl*(sl+8*r[k]-4))
+               x[dimens] <- 1/(2*sl) * ((2+sl-a)*x0 + (-2+sl+a)*x1)
             }
          } else { # dimens is condit'g direction
             x[dimens] <- xc[j] # assign conditional value
