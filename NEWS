@@ -1,3 +1,7 @@
+2019-05-22: Daniel Meyer <meyerda@ethz.ch>
+    * Version: 1.1.3
+    * testing.R: Bug fixes in chi2testtable and chi2testlinear
+
 2018-12-12: Daniel Meyer <meyerda@ethz.ch>
     * Version: 1.1.2
     * detrnd.R: Resolved cancellation issue in det.rnd

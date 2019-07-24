@@ -66,7 +66,7 @@ chi2testlinear <- function(x, alpha) {
    # binning
    tbl <- chi2testtable(x, alpha) # observed count and bin edges
    k <- length(tbl$co) # number of bins
-   if (k <= 1) {return(list(h = FALSE, p = 0, s = 0))} # no testing with just one bin
+   if (k <= 2) {return(list(h = FALSE, p = 0, s = 0))} # no testing with just two bins
    ce <- rep(0,k) # expected count
    for (j in 1:k) {ce[j] <- cdf(tbl$be[j+1],s)}
    ce[2:k] <- ce[2:k] - ce[1:(k-1)]; ce <- n*ce
@@ -171,6 +171,7 @@ chi2testtable <- function(x, alpha, cf = FALSE) {
       co <- table(co) # table with counts of factor levels
       # check if there are empty bins
       if (any(co == 0)) {next}
+      break
    }
    rm(xu) # free memory
    return(list(co = co, be = be))
